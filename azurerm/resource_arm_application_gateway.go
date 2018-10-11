@@ -1574,6 +1574,7 @@ func flattenApplicationGatewayProbes(input *[]network.ApplicationGatewayProbe) [
 				output["minimum_servers"] = int(*minServers)
 			}
 
+			matches := make([]interface{}, 0)
 			if match := props.Match; match != nil {
 				matchConfig := map[string]interface{}{}
 				if body := match.Body; body != nil {
@@ -1587,10 +1588,9 @@ func flattenApplicationGatewayProbes(input *[]network.ApplicationGatewayProbe) [
 					}
 				}
 				matchConfig["status_code"] = statusCodes
-
-				output["match"] = matchConfig
-
+				matches = append(matches, matchConfig)
 			}
+			output["match"] = matches
 		}
 
 		results = append(results, output)
