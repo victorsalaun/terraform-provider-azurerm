@@ -12,7 +12,7 @@ require (
 	github.com/gopherjs/gopherjs v0.0.0-20181017120253-0766667cb4d1 // indirect
 	github.com/hashicorp/go-multierror v1.0.0
 	github.com/hashicorp/go-uuid v1.0.0
-	github.com/hashicorp/terraform v0.11.9-beta1.0.20181019001201-17b883f59258
+	github.com/hashicorp/terraform v0.11.9-beta1.0.20181019210637-dbaf34739254
 	github.com/marstr/guid v0.0.0-20170427235115-8bdf7d1a087c // indirect
 	github.com/mattn/go-isatty v0.0.0-20170925054904-a5cdd64afdee // indirect
 	github.com/mitchellh/go-homedir v0.0.0-20180801233206-58046073cbff // indirect
