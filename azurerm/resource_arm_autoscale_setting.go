@@ -12,6 +12,7 @@ import (
 	"github.com/hashicorp/terraform/helper/validation"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/helpers/azure"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/helpers/response"
+	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/helpers/suppress"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/utils"
 )
 
@@ -121,7 +122,7 @@ func resourceArmAutoScaleSetting() *schema.Resource {
 														string(insights.MetricStatisticTypeMin),
 														string(insights.MetricStatisticTypeSum),
 													}, true),
-													DiffSuppressFunc: ignoreCaseDiffSuppressFunc,
+													DiffSuppressFunc: suppress.CaseDifference,
 												},
 												"time_window": {
 													Type:         schema.TypeString,
@@ -138,7 +139,7 @@ func resourceArmAutoScaleSetting() *schema.Resource {
 														string(insights.TimeAggregationTypeMinimum),
 														string(insights.TimeAggregationTypeTotal),
 													}, true),
-													DiffSuppressFunc: ignoreCaseDiffSuppressFunc,
+													DiffSuppressFunc: suppress.CaseDifference,
 												},
 												"operator": {
 													Type:     schema.TypeString,
@@ -151,7 +152,7 @@ func resourceArmAutoScaleSetting() *schema.Resource {
 														string(insights.LessThanOrEqual),
 														string(insights.NotEquals),
 													}, true),
-													DiffSuppressFunc: ignoreCaseDiffSuppressFunc,
+													DiffSuppressFunc: suppress.CaseDifference,
 												},
 												"threshold": {
 													Type:     schema.TypeFloat,
@@ -173,7 +174,7 @@ func resourceArmAutoScaleSetting() *schema.Resource {
 														string(insights.ScaleDirectionDecrease),
 														string(insights.ScaleDirectionIncrease),
 													}, true),
-													DiffSuppressFunc: ignoreCaseDiffSuppressFunc,
+													DiffSuppressFunc: suppress.CaseDifference,
 												},
 												"type": {
 													Type:     schema.TypeString,
@@ -183,7 +184,7 @@ func resourceArmAutoScaleSetting() *schema.Resource {
 														string(insights.ExactCount),
 														string(insights.PercentChangeCount),
 													}, true),
-													DiffSuppressFunc: ignoreCaseDiffSuppressFunc,
+													DiffSuppressFunc: suppress.CaseDifference,
 												},
 												"value": {
 													Type:         schema.TypeInt,
@@ -252,7 +253,7 @@ func resourceArmAutoScaleSetting() *schema.Resource {
 												"Saturday",
 												"Sunday",
 											}, true),
-											DiffSuppressFunc: ignoreCaseDiffSuppressFunc,
+											DiffSuppressFunc: suppress.CaseDifference,
 										},
 									},
 									"hours": {

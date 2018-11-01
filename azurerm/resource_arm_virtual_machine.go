@@ -2,6 +2,9 @@ package azurerm
 
 import (
 	"bytes"
+	"crypto/sha1"
+	"encoding/base64"
+	"encoding/hex"
 	"fmt"
 	"log"
 	"net/url"
@@ -13,6 +16,7 @@ import (
 	"github.com/hashicorp/terraform/helper/hashcode"
 	"github.com/hashicorp/terraform/helper/schema"
 	"github.com/hashicorp/terraform/helper/validation"
+	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/helpers/suppress"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/utils"
 	"golang.org/x/net/context"
 )
@@ -87,7 +91,7 @@ func resourceArmVirtualMachine() *schema.Resource {
 						"type": {
 							Type:             schema.TypeString,
 							Required:         true,
-							DiffSuppressFunc: ignoreCaseDiffSuppressFunc,
+							DiffSuppressFunc: suppress.CaseDifference,
 							ValidateFunc: validation.StringInSlice([]string{
 								string(compute.ResourceIdentityTypeSystemAssigned),
 								string(compute.ResourceIdentityTypeUserAssigned),
@@ -112,7 +116,7 @@ func resourceArmVirtualMachine() *schema.Resource {
 				Type:             schema.TypeString,
 				Optional:         true,
 				Computed:         true,
-				DiffSuppressFunc: ignoreCaseDiffSuppressFunc,
+				DiffSuppressFunc: suppress.CaseDifference,
 				ValidateFunc: validation.StringInSlice([]string{
 					"Windows_Client",
 					"Windows_Server",
@@ -122,7 +126,7 @@ func resourceArmVirtualMachine() *schema.Resource {
 			"vm_size": {
 				Type:             schema.TypeString,
 				Required:         true,
-				DiffSuppressFunc: ignoreCaseDiffSuppressFunc,
+				DiffSuppressFunc: suppress.CaseDifference,
 			},
 
 			"storage_image_reference": {
@@ -182,7 +186,7 @@ func resourceArmVirtualMachine() *schema.Resource {
 								string(compute.Linux),
 								string(compute.Windows),
 							}, true),
-							DiffSuppressFunc: ignoreCaseDiffSuppressFunc,
+							DiffSuppressFunc: suppress.CaseDifference,
 						},
 
 						"name": {
@@ -234,7 +238,7 @@ func resourceArmVirtualMachine() *schema.Resource {
 						"create_option": {
 							Type:             schema.TypeString,
 							Required:         true,
-							DiffSuppressFunc: ignoreCaseDiffSuppressFunc,
+							DiffSuppressFunc: suppress.CaseDifference,
 						},
 
 						"disk_size_gb": {
@@ -279,7 +283,7 @@ func resourceArmVirtualMachine() *schema.Resource {
 							Type:             schema.TypeString,
 							Optional:         true,
 							Computed:         true,
-							DiffSuppressFunc: ignoreCaseDiffSuppressFunc,
+							DiffSuppressFunc: suppress.CaseDifference,
 						},
 
 						"managed_disk_type": {
@@ -296,7 +300,7 @@ func resourceArmVirtualMachine() *schema.Resource {
 						"create_option": {
 							Type:             schema.TypeString,
 							Required:         true,
-							DiffSuppressFunc: ignoreCaseDiffSuppressFunc,
+							DiffSuppressFunc: suppress.CaseDifference,
 						},
 
 						"caching": {
@@ -406,7 +410,7 @@ func resourceArmVirtualMachine() *schema.Resource {
 							Type:             schema.TypeString,
 							Optional:         true,
 							ForceNew:         true,
-							DiffSuppressFunc: ignoreCaseDiffSuppressFunc,
+							DiffSuppressFunc: suppress.CaseDifference,
 							ValidateFunc:     validateAzureVirtualMachineTimeZone(),
 						},
 						"winrm": {
@@ -421,7 +425,7 @@ func resourceArmVirtualMachine() *schema.Resource {
 											"HTTP",
 											"HTTPS",
 										}, true),
-										DiffSuppressFunc: ignoreCaseDiffSuppressFunc,
+										DiffSuppressFunc: suppress.CaseDifference,
 									},
 									"certificate_url": {
 										Type:     schema.TypeString,
@@ -1874,4 +1878,38 @@ func determineVirtualMachineIPAddress(ctx context.Context, meta interface{}, pro
 	}
 
 	return "", fmt.Errorf("No Public or Private IP Address found on the Primary Network Interface")
+}
+
+
+//these functions are also used for VMSS & should be better documented
+func userDataDiffSuppressFunc(k, old, new string, d *schema.ResourceData) bool {
+	return userDataStateFunc(old) == new
+}
+
+func userDataStateFunc(v interface{}) string {
+	switch s := v.(type) {
+	case string:
+		s = base64Encode(s)
+		hash := sha1.Sum([]byte(s))
+		return hex.EncodeToString(hash[:])
+	default:
+		return ""
+	}
+}
+
+// base64Encode encodes data if the input isn't already encoded using
+// base64.StdEncoding.EncodeToString. If the input is already base64 encoded,
+// return the original input unchanged.
+func base64Encode(data string) string {
+	// Check whether the data is already Base64 encoded; don't double-encode
+	if isBase64Encoded(data) {
+		return data
+	}
+	// data has not been encoded encode and return
+	return base64.StdEncoding.EncodeToString([]byte(data))
+}
+
+func isBase64Encoded(data string) bool {
+	_, err := base64.StdEncoding.DecodeString(data)
+	return err == nil
 }

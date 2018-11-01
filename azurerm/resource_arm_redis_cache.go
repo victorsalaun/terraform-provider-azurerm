@@ -54,7 +54,7 @@ func resourceArmRedisCache() *schema.Resource {
 				Type:             schema.TypeString,
 				Required:         true,
 				ValidateFunc:     validateRedisFamily,
-				DiffSuppressFunc: ignoreCaseDiffSuppressFunc,
+				DiffSuppressFunc: suppress.CaseDifference,
 			},
 
 			"sku_name": {
@@ -65,7 +65,7 @@ func resourceArmRedisCache() *schema.Resource {
 					string(redis.Standard),
 					string(redis.Premium),
 				}, true),
-				DiffSuppressFunc: ignoreCaseDiffSuppressFunc,
+				DiffSuppressFunc: suppress.CaseDifference,
 			},
 
 			"shard_count": {

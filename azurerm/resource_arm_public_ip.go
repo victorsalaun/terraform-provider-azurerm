@@ -53,7 +53,7 @@ func resourceArmPublicIp() *schema.Resource {
 				Type:             schema.TypeString,
 				Required:         true,
 				DiffSuppressFunc: suppress.CaseDifference,
-				StateFunc:        ignoreCaseStateFunc,
+				StateFunc:        state.AsLowerCase,
 				ValidateFunc: validation.StringInSlice([]string{
 					string(network.Static),
 					string(network.Dynamic),

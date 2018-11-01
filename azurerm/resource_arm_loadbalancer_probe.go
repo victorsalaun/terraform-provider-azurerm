@@ -48,7 +48,7 @@ func resourceArmLoadBalancerProbe() *schema.Resource {
 				Type:             schema.TypeString,
 				Computed:         true,
 				Optional:         true,
-				StateFunc:        ignoreCaseStateFunc,
+				StateFunc:        state.AsLowerCase,
 				DiffSuppressFunc: suppress.CaseDifference,
 				ValidateFunc: validation.StringInSlice([]string{
 					string(network.ProbeProtocolHTTP),

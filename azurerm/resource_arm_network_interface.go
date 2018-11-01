@@ -2,6 +2,7 @@ package azurerm
 
 import (
 	"fmt"
+	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/helpers/state"
 	"log"
 	"strings"
 
@@ -88,7 +89,7 @@ func resourceArmNetworkInterface() *schema.Resource {
 								string(network.Dynamic),
 								string(network.Static),
 							}, true),
-							StateFunc:        ignoreCaseStateFunc,
+							StateFunc:        state.AsLowerCase,
 							DiffSuppressFunc: suppress.CaseDifference,
 						},
 

@@ -46,7 +46,7 @@ func resourceArmLoadBalancer() *schema.Resource {
 					string(network.LoadBalancerSkuNameBasic),
 					string(network.LoadBalancerSkuNameStandard),
 				}, true),
-				DiffSuppressFunc: ignoreCaseDiffSuppressFunc,
+				DiffSuppressFunc: suppress.CaseDifference,
 			},
 
 			"frontend_ip_configuration": {
@@ -90,7 +90,7 @@ func resourceArmLoadBalancer() *schema.Resource {
 								string(network.Dynamic),
 								string(network.Static),
 							}, true),
-							StateFunc:        ignoreCaseStateFunc,
+							StateFunc:        state.AsLowerCase,
 							DiffSuppressFunc: suppress.CaseDifference,
 						},
 

@@ -10,6 +10,7 @@ import (
 	"github.com/hashicorp/terraform/helper/hashcode"
 	"github.com/hashicorp/terraform/helper/schema"
 	"github.com/hashicorp/terraform/helper/validation"
+	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/helpers/suppress"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/utils"
 )
 
@@ -40,7 +41,7 @@ func resourceArmTrafficManagerProfile() *schema.Resource {
 					string(trafficmanager.ProfileStatusEnabled),
 					string(trafficmanager.ProfileStatusDisabled),
 				}, true),
-				DiffSuppressFunc: ignoreCaseDiffSuppressFunc,
+				DiffSuppressFunc: suppress.CaseDifference,
 			},
 
 			"traffic_routing_method": {
@@ -93,7 +94,7 @@ func resourceArmTrafficManagerProfile() *schema.Resource {
 								string(trafficmanager.HTTPS),
 								string(trafficmanager.TCP),
 							}, true),
-							DiffSuppressFunc: ignoreCaseDiffSuppressFunc,
+							DiffSuppressFunc: suppress.CaseDifference,
 						},
 						"port": {
 							Type:         schema.TypeInt,

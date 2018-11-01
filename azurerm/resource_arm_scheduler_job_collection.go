@@ -12,6 +12,7 @@ import (
 	"github.com/hashicorp/terraform/helper/schema"
 	"github.com/hashicorp/terraform/helper/validation"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/helpers/response"
+	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/helpers/suppress"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/utils"
 )
 
@@ -46,7 +47,7 @@ func resourceArmSchedulerJobCollection() *schema.Resource {
 			"sku": {
 				Type:             schema.TypeString,
 				Required:         true,
-				DiffSuppressFunc: ignoreCaseDiffSuppressFunc,
+				DiffSuppressFunc: suppress.CaseDifference,
 				ValidateFunc: validation.StringInSlice([]string{
 					string(scheduler.Free),
 					string(scheduler.Standard),
@@ -60,7 +61,7 @@ func resourceArmSchedulerJobCollection() *schema.Resource {
 				Type:             schema.TypeString,
 				Optional:         true,
 				Default:          string(scheduler.Enabled),
-				DiffSuppressFunc: ignoreCaseDiffSuppressFunc,
+				DiffSuppressFunc: suppress.CaseDifference,
 				ValidateFunc: validation.StringInSlice([]string{
 					string(scheduler.Enabled),
 					string(scheduler.Suspended),
@@ -86,7 +87,7 @@ func resourceArmSchedulerJobCollection() *schema.Resource {
 						"max_recurrence_frequency": {
 							Type:             schema.TypeString,
 							Required:         true,
-							DiffSuppressFunc: ignoreCaseDiffSuppressFunc,
+							DiffSuppressFunc: suppress.CaseDifference,
 							ValidateFunc: validation.StringInSlice([]string{
 								string(scheduler.Minute),
 								string(scheduler.Hour),
