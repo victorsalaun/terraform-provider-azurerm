@@ -1,6 +1,7 @@
 package azurerm
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"log"
@@ -967,4 +968,49 @@ func flattenAzureRmStorageAccountIdentity(identity *storage.Identity) []interfac
 	}
 
 	return []interface{}{result}
+}
+
+func (armClient *ArmClient) getKeyForStorageAccount(ctx context.Context, resourceGroupName, storageAccountName string) (string, bool, error) {
+	cacheIndex := resourceGroupName + "/" + storageAccountName
+	storageKeyCacheMu.RLock()
+	key, ok := storageKeyCache[cacheIndex]
+	storageKeyCacheMu.RUnlock()
+
+	if ok {
+		return key, true, nil
+	}
+
+	storageKeyCacheMu.Lock()
+	defer storageKeyCacheMu.Unlock()
+	key, ok = storageKeyCache[cacheIndex]
+	if !ok {
+		accountKeys, err := armClient.storageServiceClient.ListKeys(ctx, resourceGroupName, storageAccountName)
+		if utils.ResponseWasNotFound(accountKeys.Response) {
+			return "", false, nil
+		}
+		if err != nil {
+			// We assume this is a transient error rather than a 404 (which is caught above),  so assume the
+			// storeAccount still exists.
+			return "", true, fmt.Errorf("Error retrieving keys for storage storeAccount %q: %s", storageAccountName, err)
+		}
+
+		if accountKeys.Keys == nil {
+			return "", false, fmt.Errorf("Nil key returned for storage storeAccount %q", storageAccountName)
+		}
+
+		keys := *accountKeys.Keys
+		if len(keys) <= 0 {
+			return "", false, fmt.Errorf("No keys returned for storage storeAccount %q", storageAccountName)
+		}
+
+		keyPtr := keys[0].Value
+		if keyPtr == nil {
+			return "", false, fmt.Errorf("The first key returned is nil for storage storeAccount %q", storageAccountName)
+		}
+
+		key = *keyPtr
+		storageKeyCache[cacheIndex] = key
+	}
+
+	return key, true, nil
 }

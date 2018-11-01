@@ -1880,7 +1880,6 @@ func determineVirtualMachineIPAddress(ctx context.Context, meta interface{}, pro
 	return "", fmt.Errorf("No Public or Private IP Address found on the Primary Network Interface")
 }
 
-
 //these functions are also used for VMSS & should be better documented
 func userDataDiffSuppressFunc(k, old, new string, d *schema.ResourceData) bool {
 	return userDataStateFunc(old) == new

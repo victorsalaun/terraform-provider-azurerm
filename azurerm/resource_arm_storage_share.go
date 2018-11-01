@@ -1,6 +1,7 @@
 package azurerm
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"regexp"
@@ -50,6 +51,7 @@ func resourceArmStorageShare() *schema.Resource {
 		},
 	}
 }
+
 func resourceArmStorageShareCreate(d *schema.ResourceData, meta interface{}) error {
 	armClient := meta.(*ArmClient)
 	ctx := armClient.StopContext
@@ -233,4 +235,23 @@ func validateArmStorageShareName(v interface{}, k string) (ws []string, errors [
 			"%q does not allow consecutive hyphens: %q", k, value))
 	}
 	return ws, errors
+}
+
+func (armClient *ArmClient) getFileServiceClientForStorageAccount(ctx context.Context, resourceGroupName, storageAccountName string) (*storage.FileServiceClient, bool, error) {
+	key, accountExists, err := armClient.getKeyForStorageAccount(ctx, resourceGroupName, storageAccountName)
+	if err != nil {
+		return nil, accountExists, err
+	}
+	if !accountExists {
+		return nil, false, nil
+	}
+
+	storageClient, err := storage.NewClient(storageAccountName, key, armClient.environment.StorageEndpointSuffix,
+		storage.DefaultAPIVersion, true)
+	if err != nil {
+		return nil, true, fmt.Errorf("Error creating storage client for storage storeAccount %q: %s", storageAccountName, err)
+	}
+
+	fileClient := storageClient.GetFileService()
+	return &fileClient, true, nil
 }

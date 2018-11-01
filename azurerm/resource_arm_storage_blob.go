@@ -2,6 +2,7 @@ package azurerm
 
 import (
 	"bytes"
+	"context"
 	"crypto/rand"
 	"encoding/base64"
 	"fmt"
@@ -749,4 +750,23 @@ func determineResourceGroupForStorageAccount(accountName string, client *ArmClie
 	}
 
 	return nil, nil
+}
+
+func (armClient *ArmClient) getBlobStorageClientForStorageAccount(ctx context.Context, resourceGroupName, storageAccountName string) (*storage.BlobStorageClient, bool, error) {
+	key, accountExists, err := armClient.getKeyForStorageAccount(ctx, resourceGroupName, storageAccountName)
+	if err != nil {
+		return nil, accountExists, err
+	}
+	if !accountExists {
+		return nil, false, nil
+	}
+
+	storageClient, err := storage.NewClient(storageAccountName, key, armClient.environment.StorageEndpointSuffix,
+		storage.DefaultAPIVersion, true)
+	if err != nil {
+		return nil, true, fmt.Errorf("Error creating storage client for storage storeAccount %q: %s", storageAccountName, err)
+	}
+
+	blobClient := storageClient.GetBlobService()
+	return &blobClient, true, nil
 }

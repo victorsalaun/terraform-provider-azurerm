@@ -1,6 +1,7 @@
 package azurerm
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"net/url"
@@ -211,4 +212,23 @@ func parseStorageTableID(input string) (*storageTableId, error) {
 	}
 
 	return nil, nil
+}
+
+func (armClient *ArmClient) getTableServiceClientForStorageAccount(ctx context.Context, resourceGroupName, storageAccountName string) (*storage.TableServiceClient, bool, error) {
+	key, accountExists, err := armClient.getKeyForStorageAccount(ctx, resourceGroupName, storageAccountName)
+	if err != nil {
+		return nil, accountExists, err
+	}
+	if !accountExists {
+		return nil, false, nil
+	}
+
+	storageClient, err := storage.NewClient(storageAccountName, key, armClient.environment.StorageEndpointSuffix,
+		storage.DefaultAPIVersion, true)
+	if err != nil {
+		return nil, true, fmt.Errorf("Error creating storage client for storage storeAccount %q: %s", storageAccountName, err)
+	}
+
+	tableClient := storageClient.GetTableService()
+	return &tableClient, true, nil
 }

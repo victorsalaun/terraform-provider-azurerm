@@ -61,15 +61,13 @@ import (
 	"github.com/Azure/azure-sdk-for-go/services/trafficmanager/mgmt/2017-05-01/trafficmanager"
 	"github.com/Azure/azure-sdk-for-go/services/web/mgmt/2018-02-01/web"
 
-	mainStorage "github.com/Azure/azure-sdk-for-go/storage"
 	"github.com/Azure/go-autorest/autorest"
 	"github.com/Azure/go-autorest/autorest/adal"
 	az "github.com/Azure/go-autorest/autorest/azure"
-	uuid "github.com/hashicorp/go-uuid"
+	"github.com/hashicorp/go-uuid"
 	"github.com/hashicorp/terraform/httpclient"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/helpers/authentication"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/helpers/azure"
-	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/utils"
 	"github.com/terraform-providers/terraform-provider-azurerm/version"
 )
 
@@ -1123,124 +1121,3 @@ var (
 	storageKeyCacheMu sync.RWMutex
 	storageKeyCache   = make(map[string]string)
 )
-
-func (armClient *ArmClient) getKeyForStorageAccount(ctx context.Context, resourceGroupName, storageAccountName string) (string, bool, error) {
-	cacheIndex := resourceGroupName + "/" + storageAccountName
-	storageKeyCacheMu.RLock()
-	key, ok := storageKeyCache[cacheIndex]
-	storageKeyCacheMu.RUnlock()
-
-	if ok {
-		return key, true, nil
-	}
-
-	storageKeyCacheMu.Lock()
-	defer storageKeyCacheMu.Unlock()
-	key, ok = storageKeyCache[cacheIndex]
-	if !ok {
-		accountKeys, err := armClient.storageServiceClient.ListKeys(ctx, resourceGroupName, storageAccountName)
-		if utils.ResponseWasNotFound(accountKeys.Response) {
-			return "", false, nil
-		}
-		if err != nil {
-			// We assume this is a transient error rather than a 404 (which is caught above),  so assume the
-			// storeAccount still exists.
-			return "", true, fmt.Errorf("Error retrieving keys for storage storeAccount %q: %s", storageAccountName, err)
-		}
-
-		if accountKeys.Keys == nil {
-			return "", false, fmt.Errorf("Nil key returned for storage storeAccount %q", storageAccountName)
-		}
-
-		keys := *accountKeys.Keys
-		if len(keys) <= 0 {
-			return "", false, fmt.Errorf("No keys returned for storage storeAccount %q", storageAccountName)
-		}
-
-		keyPtr := keys[0].Value
-		if keyPtr == nil {
-			return "", false, fmt.Errorf("The first key returned is nil for storage storeAccount %q", storageAccountName)
-		}
-
-		key = *keyPtr
-		storageKeyCache[cacheIndex] = key
-	}
-
-	return key, true, nil
-}
-
-func (armClient *ArmClient) getBlobStorageClientForStorageAccount(ctx context.Context, resourceGroupName, storageAccountName string) (*mainStorage.BlobStorageClient, bool, error) {
-	key, accountExists, err := armClient.getKeyForStorageAccount(ctx, resourceGroupName, storageAccountName)
-	if err != nil {
-		return nil, accountExists, err
-	}
-	if !accountExists {
-		return nil, false, nil
-	}
-
-	storageClient, err := mainStorage.NewClient(storageAccountName, key, armClient.environment.StorageEndpointSuffix,
-		mainStorage.DefaultAPIVersion, true)
-	if err != nil {
-		return nil, true, fmt.Errorf("Error creating storage client for storage storeAccount %q: %s", storageAccountName, err)
-	}
-
-	blobClient := storageClient.GetBlobService()
-	return &blobClient, true, nil
-}
-
-func (armClient *ArmClient) getFileServiceClientForStorageAccount(ctx context.Context, resourceGroupName, storageAccountName string) (*mainStorage.FileServiceClient, bool, error) {
-	key, accountExists, err := armClient.getKeyForStorageAccount(ctx, resourceGroupName, storageAccountName)
-	if err != nil {
-		return nil, accountExists, err
-	}
-	if !accountExists {
-		return nil, false, nil
-	}
-
-	storageClient, err := mainStorage.NewClient(storageAccountName, key, armClient.environment.StorageEndpointSuffix,
-		mainStorage.DefaultAPIVersion, true)
-	if err != nil {
-		return nil, true, fmt.Errorf("Error creating storage client for storage storeAccount %q: %s", storageAccountName, err)
-	}
-
-	fileClient := storageClient.GetFileService()
-	return &fileClient, true, nil
-}
-
-func (armClient *ArmClient) getTableServiceClientForStorageAccount(ctx context.Context, resourceGroupName, storageAccountName string) (*mainStorage.TableServiceClient, bool, error) {
-	key, accountExists, err := armClient.getKeyForStorageAccount(ctx, resourceGroupName, storageAccountName)
-	if err != nil {
-		return nil, accountExists, err
-	}
-	if !accountExists {
-		return nil, false, nil
-	}
-
-	storageClient, err := mainStorage.NewClient(storageAccountName, key, armClient.environment.StorageEndpointSuffix,
-		mainStorage.DefaultAPIVersion, true)
-	if err != nil {
-		return nil, true, fmt.Errorf("Error creating storage client for storage storeAccount %q: %s", storageAccountName, err)
-	}
-
-	tableClient := storageClient.GetTableService()
-	return &tableClient, true, nil
-}
-
-func (armClient *ArmClient) getQueueServiceClientForStorageAccount(ctx context.Context, resourceGroupName, storageAccountName string) (*mainStorage.QueueServiceClient, bool, error) {
-	key, accountExists, err := armClient.getKeyForStorageAccount(ctx, resourceGroupName, storageAccountName)
-	if err != nil {
-		return nil, accountExists, err
-	}
-	if !accountExists {
-		return nil, false, nil
-	}
-
-	storageClient, err := mainStorage.NewClient(storageAccountName, key, armClient.environment.StorageEndpointSuffix,
-		mainStorage.DefaultAPIVersion, true)
-	if err != nil {
-		return nil, true, fmt.Errorf("Error creating storage client for storage storeAccount %q: %s", storageAccountName, err)
-	}
-
-	queueClient := storageClient.GetQueueService()
-	return &queueClient, true, nil
-}
